@@ -33,6 +33,8 @@ function preload() {
       game.load.image('star', 'assets/star.png');
       game.load.spritesheet('dude', 'assets/dude.png', 32, 48);
 
+      game.time.advancedTiming = true;
+
 }
 
 function create() {
@@ -189,6 +191,9 @@ function update() {
     //Update our position to the server
     var ourPlayer = ds.record.getRecord(guid);
     ourPlayer.set({ position: {x: player.position.x, y: player.position.y }});
+
+
+  game.debug.text(game.time.fps || '--', 2, 14, "#00ff00");
 
 }
 
