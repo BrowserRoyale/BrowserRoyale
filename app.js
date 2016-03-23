@@ -7,6 +7,25 @@ var stars;
 var score = 0,
     scoreText;
 
+//Multiplayer variables
+var
+  ds,
+  guid,
+  players = [];
+
+ds = deepstream( 'localhost:6020' ).login();
+
+//Helper functions
+function guid() {
+  function s4() {
+    return Math.floor((1 + Math.random()) * 0x10000)
+      .toString(16)
+      .substring(1);
+  }
+  return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
+    s4() + '-' + s4() + s4() + s4();
+}
+
 function preload() {
 
       game.load.image('sky', 'assets/sky.png');
@@ -55,7 +74,7 @@ function create() {
       //  Our two animations, walking left and right.
       player.animations.add('left', [0, 1, 2, 3], 10, true);
       player.animations.add('right', [5, 6, 7, 8], 10, true);
-      player.body.gravity.y = 450;
+      player.body.gravity.y = 400;
 
       stars = game.add.group();
 
@@ -68,7 +87,7 @@ function create() {
           var star = stars.create(i * 70, 0, 'star');
 
           //  Let gravity do its thing
-          star.body.gravity.y = 12;
+          star.body.gravity.y = 50;
 
           //  This just gives each star a slightly random bounce value
           star.body.bounce.y = 0.7 + Math.random() * 0.2;
@@ -79,6 +98,36 @@ function create() {
 
       //Create score
       scoreText = game.add.text(16, 16, 'score: 0', { fontSize: '32px', fill: '#000' });
+
+      //Generate a guid
+      guid = guid();
+
+
+
+      // Setup deepstream
+      var playersDs = ds.record.getList( 'players' );
+
+      playersDs.whenReady(function() {
+        //Add our own entry
+        playersDs.addEntry( guid );
+        ds.record.getRecord( guid).set({position: { x: 32, y: player.position.y } });
+
+        //Add other players
+        playersDs.getEntries().forEach(function( id ) {
+          playersG = game.add.group();
+          var player = ds.record.getRecord(id);
+          player.whenReady(function() {
+            playerId = player.name;
+            player = player.get();
+            //Add the player to the game with a name of the record id
+            var playerCreated = playersG.create(player.position.x, player.position.y, 'dude');
+            playerCreated.id = playerId;
+            players.push(playerCreated);
+          });
+        });
+
+      });
+
 
 }
 
@@ -124,6 +173,22 @@ function update() {
     //See if the player overlaps a star
     game.physics.arcade.overlap(player, stars, collectStar, null, this);
 
+    if(players) {
+      //Get coords of other players and update them
+      players.forEach(function (player, i) {
+        var playerRecord = ds.record.getRecord(player.id);
+         players.filter(function(player) {
+          if(player.id == playerRecord.name && player.id !== guid) {
+            players[i].position.x = playerRecord.get().position.x;
+            players[i].position.y = playerRecord.get().position.y;
+          }
+        });
+      })
+    }
+
+    //Update our position to the server
+    var ourPlayer = ds.record.getRecord(guid);
+    ourPlayer.set({ position: {x: player.position.x, y: player.position.y }});
 
 }
 

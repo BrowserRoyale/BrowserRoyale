@@ -9,6 +9,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "deepstream.io": "^0.8.1",
     "phaser": "^2.4.6"
   },
   "devDependencies": {

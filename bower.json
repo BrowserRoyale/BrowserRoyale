@@ -1,0 +1,21 @@
+{
+  "name": "browser-royale",
+  "description": "",
+  "main": "index.js",
+  "authors": [
+    "Edward Januszewski <e.januszewski@gmail.com>"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/BrowserRoyale/BrowserRoyale",
+  "moduleType": [],
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "deepstream.io-client-js": "^0.4.3"
+  }
+}
