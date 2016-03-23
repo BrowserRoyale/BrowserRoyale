@@ -33,6 +33,7 @@ function preload() {
       game.load.image('star', 'assets/star.png');
       game.load.spritesheet('dude', 'assets/dude.png', 32, 48);
 
+      game.stage.disableVisibilityChange = true;
       game.time.advancedTiming = true;
 
 }
@@ -101,17 +102,27 @@ function create() {
       //Create score
       scoreText = game.add.text(16, 16, 'score: 0', { fontSize: '32px', fill: '#000' });
 
-      //Generate a guid
-      guid = guid();
+      var hasGuid = false;
 
+      if(localStorage.getItem('player-guid')) {
+        guid = localStorage.getItem('player-guid');
+        hasGuid = true;
+      } else {
+        //Generate a guid
+        guid = guid();
 
+        //Store the guid to localstorage for reconnecting afterwards
+        localStorage.setItem('player-guid', guid);
+      }
 
       // Setup deepstream
       var playersDs = ds.record.getList( 'players' );
 
       playersDs.whenReady(function() {
-        //Add our own entry
-        playersDs.addEntry( guid );
+        if(!hasGuid) {
+          //Add our own entry
+          playersDs.addEntry(guid);
+        }
         ds.record.getRecord( guid).set({position: { x: 32, y: player.position.y } });
 
         //Add other players
@@ -125,8 +136,14 @@ function create() {
             var playerCreated = playersG.create(player.position.x, player.position.y, 'dude');
             playerCreated.id = playerId;
             players.push(playerCreated);
+            console.log(players);
           });
         });
+
+        player.id = guid;
+        players.push(player);
+        console.log(players);
+
 
       });
 
@@ -178,7 +195,7 @@ function update() {
     if(players) {
       //Get coords of other players and update them
       players.forEach(function (player, i) {
-        var playerRecord = ds.record.getRecord(player.id);
+        var playerRecord = ds.record.getRecord(player.id)
          players.filter(function(player) {
           if(player.id == playerRecord.name && player.id !== guid) {
             players[i].position.x = playerRecord.get().position.x;
@@ -193,7 +210,7 @@ function update() {
     ourPlayer.set({ position: {x: player.position.x, y: player.position.y }});
 
 
-  game.debug.text(game.time.fps || '--', 2, 14, "#00ff00");
+    game.debug.text(game.time.fps || '--', 2, 14, "#00ff00");
 
 }
 
