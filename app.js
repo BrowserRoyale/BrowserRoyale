@@ -1,62 +1,13 @@
-var user,player,players,playersDS,loaded, userId;
-userId = prompt("Please enter your name", "");
-players = [];
-var ds = deepstream( 'localhost:6020' ).login();
+var game,user,player,enemies,tickRate,playersDS, userId;
+enemies = {};
+tickrate = 33;
+
 function preload(){
   game.stage.disableVisibilityChange = true;
-  user = ds.record.getRecord(userId);
-  playersDS = ds.record.getList('players');
-  playersDS.subscribe( function(playerList){
-    var oldPlayerList = players.map(function(plyr){return plyr.data.name});
-    playerList.forEach(function(newPlayer) {
-      if(newPlayer != userId)
-      {
-        if(oldPlayerList.indexOf(newPlayer) == -1)
-        {
-          var np = ds.record.getRecord(newPlayer);
-          np.whenReady(function(){
-            var sprite = game.add.sprite(0,0, 'dude');
-            sprite.anchor.setTo(0.5, 0.5);
-            players.push({data:np, sprite:sprite});
-          });
-        }
-      }
-    });
-    players = players.filter(function(plyr){
-      return playerList.indexOf(plyr.data.name) < 0;
-    });
-  });
-  playersDS.whenReady(function(){
-    playersDS.addEntry(userId);
-    playersDS.getEntries().forEach( function( id, obj ) {
-      if(id != userId)
-      {
-        var enemy = ds.record.getRecord( id );
-        enemy.whenReady( function(){
-            var pos = enemy.get('position');
-            if(!pos)
-              pos={x:0,y:0};
-            var sprite = game.add.sprite(pos.x, pos.y, 'dude');
-            sprite.anchor.setTo(0.5, 0.5);
-            players.push({data:enemy, sprite:sprite});
-        });
-      }
-    });
-  });
   game.load.spritesheet('dude', 'assets/dude.png', 37, 45, 18);
+  game.time.advancedTiming = true;
 }
 function create(){
-  user.whenReady(function(){
-
-    var pos = user.get('position');
-    if(pos)
-    {
-      player.x = pos.x;
-      player.y = pos.y;
-      //player.rotation = pos.rotation;
-    }
-    loaded = true;
-  });
   player = game.add.sprite(200, 200, 'dude');
   player.anchor.setTo(0.5, 0.5);
   game.physics.startSystem(Phaser.Physics.ARCADE);
@@ -64,18 +15,15 @@ function create(){
   //load user position
 
 
-
-
 }
 function update(){
-  if(!loaded)
-    return
 
   //update position of player
   player.body.velocity.x = 0;
   player.body.velocity.y = 0;
   player.body.angularVelocity = 0;
   player.rotation = game.physics.arcade.angleToPointer(player);
+  game.debug.text(game.time.fps || '--', 2, 14, "#00ff00");
   if (game.input.keyboard.isDown(Phaser.Keyboard.UP))
   {
       game.physics.arcade.velocityFromAngle(player.angle, 300, player.body.velocity);
@@ -83,29 +31,36 @@ function update(){
   else{
     player.angularVelocity = 0;
   }
-  //perist location of player
-  user.set('position',{x:player.x,y:player.y,rotation:player.rotation});
-
-  players.forEach(function(enemy){
-    if(!enemy.sprite)
-    {
-      enemy.sprite = game.add.sprite(200, 200, 'dude');
-    }
-    if(enemy.data && enemy.sprite)
-    {
-      var pos = enemy.data.get('position');
-      if(!pos)
-        pos={x:0,y:0};
-      enemy.sprite.x = pos.x;
-      enemy.sprite.y = pos.y;
-    }
-  });
+  //transmit player data location of player
 }
-var game = new Phaser.Game(800, 600, Phaser.AUTO, '', { preload: preload, create: create, update: update });
+var socket = io('localhost:3000');
+game = new Phaser.Game(800, 600, Phaser.AUTO, '', { preload: preload, create: create, update: update });
+socket.on('connected',function(data){
+  userId=data;
+  setInterval(function(){
+    socket.emit('client-tick',{x:player.x,y:player.y});
+  },tickRate);
+});
+socket.on('server-tick',function(data){
+  updatePlayers(data);
 
-window.onbeforeunload = function (event) {
-  playersDS.unsubscribe();
-  playersDS.removeEntry(user.name);
-  user.discard();
-  user.delete();
-};
+});
+
+function updatePlayers(serverData){
+  for(var propt in enemies){
+    //if the enemy is not in serverdata it needs to be removed
+    if(!serverData[propt])
+    {
+      enemies[propt].destroy();
+      delete enemies[propt];
+    }
+  }
+  for(var propt in serverData){
+    if(propt == userId)
+      continue;
+    if(!enemies[propt])
+      enemies[propt] = game.add.sprite(serverData[propt].x, serverData[propt].y, 'dude');
+    enemies[propt].x = serverData[propt].x;
+    enemies[propt].y = serverData[propt].y;
+  }
+}
