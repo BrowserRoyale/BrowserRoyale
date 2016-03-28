@@ -10,7 +10,10 @@
   "license": "MIT",
   "dependencies": {
     "deepstream.io": "^0.8.1",
-    "phaser": "^2.4.6"
+    "express": "^4.13.4",
+    "phaser": "^2.4.6",
+    "socket.io": "^1.4.5",
+    "socket.io-client": "^1.4.5"
   },
   "devDependencies": {
     "tern": "^0.18.0",
