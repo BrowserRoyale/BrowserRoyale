@@ -1,6 +1,6 @@
 var game,user,player,enemies,tickRate,playersDS, userId;
 enemies = {};
-tickrate = 33;
+tickRate = 33;
 function preload(){
   game.stage.disableVisibilityChange = true;
   game.load.spritesheet('dude', 'assets/dude.png', 37, 45, 18);
