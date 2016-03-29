@@ -1,7 +1,6 @@
 var game,user,player,enemies,tickRate,playersDS, userId;
 enemies = {};
 tickrate = 33;
-
 function preload(){
   game.stage.disableVisibilityChange = true;
   game.load.spritesheet('dude', 'assets/dude.png', 37, 45, 18);
@@ -12,12 +11,8 @@ function create(){
   player.anchor.setTo(0.5, 0.5);
   game.physics.startSystem(Phaser.Physics.ARCADE);
   game.physics.enable(player, Phaser.Physics.ARCADE);
-  //load user position
-
-
 }
 function update(){
-
   //update position of player
   player.body.velocity.x = 0;
   player.body.velocity.y = 0;
@@ -43,7 +38,6 @@ function update(){
   else{
     player.angularVelocity = 0;
   }
-  //transmit player data location of player
 }
 var socket = io('localhost:3000');
 game = new Phaser.Game(800, 600, Phaser.AUTO, '', { preload: preload, create: create, update: update });
@@ -55,9 +49,7 @@ socket.on('connected',function(data){
 });
 socket.on('server-tick',function(data){
   updatePlayers(data);
-
 });
-
 function updatePlayers(serverData){
   for(var propt in enemies){
     //if the enemy is not in serverdata it needs to be removed
